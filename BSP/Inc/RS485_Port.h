@@ -16,6 +16,7 @@ void RS485_PortSetParserTask(osThreadId_t parser_task);
 uint8_t RS485_PortInit(void);
 uint8_t RS485_PortRecover(void);
 void RS485_PortFlush(void);
+uint32_t RS485_PortGetSilentTimeTicks(void);
 
 int32_t RS485_PortRead(
     uint8_t *buffer,

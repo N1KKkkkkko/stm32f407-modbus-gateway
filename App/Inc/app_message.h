@@ -10,9 +10,11 @@
 #define APP_MESSAGE_H
 
 #include <stdint.h>
+#include "dev_acrel_dtsd1352.h"
+
 #define MAX_PAYLOAD_LEN 16
 #define POOL_BLOCK_COUNT 30  // 内存池 30 块，能扛短时离线积压
-#define DEVICE_DATA_RX_QUEUE_ITEM_SIZE 32U
+#define DEVICE_DATA_RX_QUEUE_ITEM_SIZE 48U
 #define LOG_DATA_QUEUE_ITEM_SIZE 12U
 
 //设备类型值
@@ -31,13 +33,13 @@ typedef uint32_t DeviceType_t;
 
 // Queue_DeviceData_Rx Item
 // 设备数据 （经过USART,Modbus RTU协议拆解后的设备数据 和 网关温度）
-typedef struct {
+typedef struct DeviceData_Rx_t {
     uint32_t timestamp;//时间戳
     DeviceType_t dev_type;// 设备类型
     uint8_t  dev_id; // 设备ID
     uint8_t  data_len; // 数据长度
     union {
-        Dev_Acrel_DTSD1352_t Acrel_Item;
+        Dev_Acrel_DTSD1352_t Acrel;
     } payload; // 数据载荷(实际数据)，支持多种类型，按设备类型解析
     uint8_t reserved[4]; // 显式填充到32字节，与静态队列Item大小一致
 } DeviceData_Rx_t;

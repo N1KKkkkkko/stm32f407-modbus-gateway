@@ -14,6 +14,7 @@
 
 #include "app_tasks.h"
 #include "nanomodbus.h"
+#include "RS485_Port.h"
 #include "SlaveMachine_form.h"
 
 #define RS485_POLL_MAX_RETRIES 3U       //最大重试次数
@@ -32,7 +33,10 @@ typedef struct
 static RS485_SlaveMachineState_t
     RS485_SlaveMachineStates[RS485_SLAVE_MACHINE_COUNT];
 
+static uint32_t RS485_PollCursor = 0U;
 
+/* 当前设备只使用专用payload和专用解析函数，通用原始负载路径不参与编译。 */
+#if 0
 /**
  * @brief Default register packer.
  * @note  Stores host-order uint16 registers as big-endian bytes in payload.
@@ -62,6 +66,7 @@ static void RS485_PackRawRegisters(
 
     device_data->data_len = (uint8_t)(register_count * 2U);
 }
+#endif
 
 /**
  * @brief Dispatch one polling request according to the configured Modbus
@@ -148,13 +153,18 @@ static RS485_Status_t RS485_PollDeviceOnce(
 static int32_t RS485_FindDueDevice(uint32_t start_tick)
 {
     uint32_t index;
+    uint32_t offset;
 
-    for (index = 0U; index < RS485_SLAVE_MACHINE_COUNT; index++)
+    for (offset = 0U; offset < RS485_SLAVE_MACHINE_COUNT; offset++)
     {
+        index = (RS485_PollCursor + offset) % RS485_SLAVE_MACHINE_COUNT;
+
         if ((RS485_SlaveMachines[index].enabled != 0U) &&
             ((int32_t)(start_tick -
                        RS485_SlaveMachineStates[index].next_poll_tick) >= 0))
         {
+            RS485_PollCursor =
+                (index + 1U) % RS485_SLAVE_MACHINE_COUNT;
             return (int32_t)index;
         }
     }
@@ -174,6 +184,7 @@ static void RS485_PublishDeviceData(
 
     if ((device == NULL) ||
         (function == NULL) ||
+        (function->pack_data == NULL) ||
         (response == NULL) ||
         (response->status != RS485_STATUS_OK) ||
         (response->register_count == 0U))
@@ -185,22 +196,11 @@ static void RS485_PublishDeviceData(
     device_data.dev_type = device->profile->device_type;
     device_data.dev_id = device->slave_address;
 
-    if (function->pack_data != NULL)
-    {
-        function->pack_data(
-            response->registers,
-            response->register_count,
-            &device_data
-        );
-    }
-    else
-    {
-        RS485_PackRawRegisters(
-            response->registers,
-            response->register_count,
-            &device_data
-        );
-    }
+    function->pack_data(
+        response->registers,
+        response->register_count,
+        &device_data
+    );
 
     if (device_data.data_len > 0U)
     {
@@ -210,6 +210,34 @@ static void RS485_PublishDeviceData(
             0U,
             0U
         );
+    }
+}
+
+/* 保证相邻功能请求之间满足Modbus RTU最小静默时间。 */
+static void RS485_WaitMinimumSilentTime(
+    uint32_t finish_func_time,
+    uint8_t has_previous_frame,
+    uint32_t *star_func_time)
+{
+    uint32_t now_tick;
+    uint32_t elapsed_tick;
+    uint32_t silent_tick;
+
+    if ((has_previous_frame != 0U) && (star_func_time != NULL))
+    {
+        silent_tick = RS485_PortGetSilentTimeTicks();
+        now_tick = osKernelGetTickCount();
+        elapsed_tick = now_tick - finish_func_time;
+
+        if (elapsed_tick < silent_tick)
+        {
+            osDelay(silent_tick - elapsed_tick);
+        }
+    }
+
+    if (star_func_time != NULL)
+    {
+        *star_func_time = osKernelGetTickCount();
     }
 }
 
@@ -223,6 +251,9 @@ void Task_Pollin_Run(void *argument)
     RS485_Response_t response;
     uint32_t start_tick;
     uint32_t finish_tick;
+    uint32_t star_func_time = 0U;
+    uint32_t finish_func_time = 0U;
+    uint8_t has_previous_frame = 0U;
     int32_t device_index;
     RS485_Status_t result;  /* 0: OK, 1: error; details in response.error_code */
     const RS485_SlaveMachine_t *device;
@@ -281,7 +312,14 @@ void Task_Pollin_Run(void *argument)
             }
             else
             {
+                RS485_WaitMinimumSilentTime(
+                    finish_func_time,
+                    has_previous_frame,
+                    &star_func_time
+                );
                 result = RS485_PollDeviceOnce(device, function, &response);
+                finish_func_time = osKernelGetTickCount();
+                has_previous_frame = 1U;
             }
         }
 
@@ -305,7 +343,8 @@ void Task_Pollin_Run(void *argument)
             else
             {
                 /* Continue this device's remaining function templates. */
-                device_state->next_poll_tick = finish_tick;
+                device_state->next_poll_tick =
+                    finish_func_time + RS485_PortGetSilentTimeTicks();
             }
         }
         else //状态异常
@@ -316,7 +355,7 @@ void Task_Pollin_Run(void *argument)
                 device_state->online = 0U;
 
                 if (response.error_code != NMBS_ERROR_INVALID_ARGUMENT 
-                && device_state->retry_count < RS485_POLL_MAX_RETRIES)
+                && device_state->retry_count < RS485_POLL_MAX_RETRIES)  //可重试
                 {
                     device_state->retry_count++;
                     device_state->next_poll_tick =

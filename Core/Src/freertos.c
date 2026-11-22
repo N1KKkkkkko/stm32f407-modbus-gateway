@@ -156,7 +156,7 @@ const osThreadAttr_t Task_Pollin_attributes = {
 };
 /* Definitions for Queue_DeviceData_Rx */
 osMessageQueueId_t Queue_DeviceData_RxHandle;
-uint8_t Queue_DeviceData_RxBuffer[ 16 * 32 ];
+uint8_t Queue_DeviceData_RxBuffer[ 16 * 48 ];
 osStaticMessageQDef_t Queue_DeviceData_RxControlBlock;
 const osMessageQueueAttr_t Queue_DeviceData_Rx_attributes = {
   .name = "Queue_DeviceData_Rx",
@@ -263,7 +263,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of Queue_DeviceData_Rx */
-  Queue_DeviceData_RxHandle = osMessageQueueNew (16, 32, &Queue_DeviceData_Rx_attributes);
+  Queue_DeviceData_RxHandle = osMessageQueueNew (16, 48, &Queue_DeviceData_Rx_attributes);
 
   /* creation of Queue_FlashData */
   Queue_FlashDataHandle = osMessageQueueNew (30, 4, &Queue_FlashData_attributes);

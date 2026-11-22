@@ -243,6 +243,45 @@ void RS485_PortFlush(void)
 }
 
 /**
+ * @brief 计算Modbus RTU两帧之间所需的最小静默时间。
+ * @note  波特率高于19200时使用固定1.75ms，其余情况使用3.5个字符时间。
+ * @return 转换为FreeRTOS tick的静默时间，最小为1 tick。
+ */
+uint32_t RS485_PortGetSilentTimeTicks(void)
+{
+    uint32_t baud_rate = huart2.Init.BaudRate;
+    uint32_t silent_time_us;
+    uint32_t tick_frequency = osKernelGetTickFreq();
+    uint64_t tick_count;
+
+    if (baud_rate == 0U)
+    {
+        return 1U;
+    }
+
+    if (baud_rate > 19200U)
+    {
+        silent_time_us = 1750U;
+    }
+    else
+    {
+        silent_time_us =
+            (38500000U + baud_rate - 1U) / baud_rate;
+    }
+
+    tick_count =
+        ((uint64_t)silent_time_us * tick_frequency + 999999ULL) /
+        1000000ULL;
+
+    if (tick_count == 0ULL)
+    {
+        return 1U;
+    }
+
+    return (uint32_t)tick_count;
+}
+
+/**
  * @brief 从链路层环形缓冲读取指定数量的字节。
  * @note  运行在Task_RS485上下文；无数据时按byte_timeout_ms阻塞等待任务通知。
  * @return 实际读取字节数，负数表示链路读取失败。

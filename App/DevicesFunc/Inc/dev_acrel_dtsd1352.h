@@ -4,16 +4,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "app_message.h"
+struct DeviceData_Rx_t;
 
 /*初始地址映射*/
 #define ACREL_DTSD1352_TOTAL_ENERGY_ADDRESS                                                 (0x000A)
-#define ACREL_DTSD1352_ACREL_DTSD1352_ABC_VOLATGE_CURRENT_ADDRESS                           (0x0061)
+#define ACREL_DTSD1352_ABC_VOLATGE_CURRENT_ADDRESS                                          (0x0061)
 #define ACREL_DTSD1352_PT_CT_ADDRESS                                                        (0x008D)
 
 /*寄存器数量映射*/
 #define ACREL_DTSD1352_TOTAL_ENERGY_COUNT                                                   (2U)
-#define ACREL_DTSD1352_ACREL_DTSD1352_ABC_VOLATGE_CURRENT_COUNT                             (6U)
+#define ACREL_DTSD1352_ABC_VOLATGE_CURRENT_COUNT                                            (6U)
 #define ACREL_DTSD1352_PT_CT_COUNT                                                          (2U)
 
 /* DTSD1352 数据荷载结构体 */
@@ -28,17 +28,22 @@ typedef struct Dev_Acrel_DTSD1352_t
     float Ic_a;                // C相电流 A
     uint8_t pt;                // 电压变比
     uint8_t ct;                // 电流变比
-};
+}Dev_Acrel_DTSD1352_t;
 
+
+void Acrel_DTSD1352_Pack_PTCT(
+    const uint16_t *registers,
+    uint16_t register_count,
+    struct DeviceData_Rx_t *device_data);
 
 void Acrel_DTSD1352_Pack_EnergyTotal(
     const uint16_t *registers,
     uint16_t register_count,
-    DeviceData_Rx_t *device_data);
+    struct DeviceData_Rx_t *device_data);
 
 void Acrel_DTSD1352_Pack_Current_Voltage_ABC(
     const uint16_t *registers,
     uint16_t register_count,
-    DeviceData_Rx_t *device_data);
+    struct DeviceData_Rx_t *device_data);
 
 #endif /* DEV_ACREL_DTSD1352_H */
