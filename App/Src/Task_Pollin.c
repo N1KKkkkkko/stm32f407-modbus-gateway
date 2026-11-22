@@ -287,7 +287,7 @@ void Task_Pollin_Run(void *argument)
 
         finish_tick = osKernelGetTickCount();
 
-        if (result == RS485_STATUS_OK)
+        if (result == RS485_STATUS_OK) //状态正常
         {
             device_state->online = 1U;       
             device_state->retry_count = 0U;
@@ -308,28 +308,31 @@ void Task_Pollin_Run(void *argument)
                 device_state->next_poll_tick = finish_tick;
             }
         }
-        else
+        else //状态异常
         {
-            device_state->last_error = response.error_code;
-            device_state->online = 0U;
-
-            if (response.error_code != NMBS_ERROR_INVALID_ARGUMENT 
-                && device_state->retry_count < RS485_POLL_MAX_RETRIES)
+            /* 轮询失败,记录错误码,设置设备离线状态,并根据重试次数决定是否重试或跳过 */
             {
-                device_state->retry_count++;
-                device_state->next_poll_tick =
+                device_state->last_error = response.error_code;
+                device_state->online = 0U;
+
+                if (response.error_code != NMBS_ERROR_INVALID_ARGUMENT 
+                && device_state->retry_count < RS485_POLL_MAX_RETRIES)
+                {
+                    device_state->retry_count++;
+                    device_state->next_poll_tick =
                     finish_tick +
                     ((RS485_POLL_RETRY_DELAY_MS *
                       osKernelGetTickFreq()) / 1000U);
-            }
-            else
-            {
-                device_state->retry_count = 0U;
-                device_state->function_index = 0U;
-                device_state->next_poll_tick =
+                }
+                else
+                {
+                    device_state->retry_count = 0U;
+                    device_state->function_index = 0U;
+                    device_state->next_poll_tick =
                     finish_tick +
                     ((device->poll_interval_ms *
                       osKernelGetTickFreq()) / 1000U);
+                }
             }
         }
     }

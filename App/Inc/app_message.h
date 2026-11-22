@@ -37,9 +37,7 @@ typedef struct {
     uint8_t  dev_id; // 设备ID
     uint8_t  data_len; // 数据长度
     union {
-        uint8_t  Byte_val[MAX_PAYLOAD_LEN];
-        float    float_val[MAX_PAYLOAD_LEN / 4];
-        int32_t  int_val[MAX_PAYLOAD_LEN / 4];
+        Dev_Acrel_DTSD1352_t Acrel_Item;
     } payload; // 数据载荷(实际数据)，支持多种类型，按设备类型解析
     uint8_t reserved[4]; // 显式填充到32字节，与静态队列Item大小一致
 } DeviceData_Rx_t;

@@ -63,34 +63,22 @@ static const RS485_FuncTemplate_t Acrel_DTSD1352_Funcs[] =
 {
     {
         .function = MODBUS_FUNCTION_READ_HOLDING,
-        .start_addr = 0U,
+        .start_addr = TOTAL_ENERGY_ADDRESS,
         .quantity = 2U,
-        .pack_data = Acrel_DTSD1352_Pack_EnergyTotal
+        .pack_data = Acrel_DTSD1352_Pack_EnergyTotal                //当前正向总有功电能
     },
     {
         .function = MODBUS_FUNCTION_READ_HOLDING,
-        .start_addr = 2U,
+        .start_addr = ABC_VOLATGE_CURRENT_ADDRESS,
         .quantity = 6U,
-        .pack_data = Acrel_DTSD1352_Pack_EnergyABC
+        .pack_data = Acrel_DTSD1352_Pack_Current_Voltage_ABC        //ABC向电压电流             
     },
     {
         .function = MODBUS_FUNCTION_READ_HOLDING,
-        .start_addr = 50U,
-        .quantity = 6U,
-        .pack_data = Acrel_DTSD1352_Pack_VI
+        .start_addr = PT_CT_ADDRESS,
+        .quantity = 2U,
+        .pack_data = Acrel_DTSD1352_Pack_PTCT                       //PT电压变比,CT电流变比             
     },
-    {
-        .function = MODBUS_FUNCTION_READ_HOLDING,
-        .start_addr = 64U,
-        .quantity = 3U,
-        .pack_data = Acrel_DTSD1352_Pack_Power
-    },
-    {
-        .function = MODBUS_FUNCTION_READ_HOLDING,
-        .start_addr = 70U,
-        .quantity = 3U,
-        .pack_data = Acrel_DTSD1352_Pack_PF_Freq
-    }
 };
 
 static const DeviceTypeProfile_t Acrel_DTSD1352_Profile =
