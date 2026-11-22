@@ -9,13 +9,13 @@ static const uint8_t Acrel_CT = 1;//电流变比默认值
  ***********************************************************************/
 void Acrel_DTSD1352_Pack_PTCT(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_t *device_data)
 {
-    if (registers == NULL || device_data == NULL || register_count < 2U)
+    if (registers == NULL || device_data == NULL || register_count < ACREL_DTSD1352_PT_CT_COUNT)
     {
         return;
     }
 
-    device_data->Acrel.pt = registers[0];
-    device_data->Acrel.pt = registers[1];
+    device_data->Acrel.pt = (uint8_t)registers[0];
+    device_data->Acrel.pt = (uint8_t)registers[1];
 }
 
 /***********************************************************************
@@ -24,7 +24,7 @@ void Acrel_DTSD1352_Pack_PTCT(const uint16_t *registers, uint16_t register_count
  ***********************************************************************/
 void Acrel_DTSD1352_Pack_EnergyTotal(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_t *device_data)
 {
-    if (registers == NULL || device_data == NULL || register_count < 2U)
+    if (registers == NULL || device_data == NULL || register_count < ACREL_DTSD1352_TOTAL_ENERGY_COUNT)
     {
         return;
     }
@@ -41,7 +41,7 @@ void Acrel_DTSD1352_Pack_EnergyTotal(const uint16_t *registers, uint16_t registe
  ***********************************************************************/
 void Acrel_DTSD1352_Pack_Current_Voltage_ABC(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_t *device_data)
 {
-    if (registers == NULL || device_data == NULL || register_count < 6U)
+    if (registers == NULL || device_data == NULL || register_count < ACREL_DTSD1352_ACREL_DTSD1352_ABC_VOLATGE_CURRENT_COUNT)
     {
         return;
     }

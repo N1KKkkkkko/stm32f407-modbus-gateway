@@ -7,9 +7,14 @@
 #include "app_message.h"
 
 /*初始地址映射*/
-#define TOTAL_ENERGY_ADDRESS                                (0x000A)
-#define ABC_VOLATGE_CURRENT_ADDRESS                         (0x0061)
-#define PT_CT_ADDRESS                                       (0x008D)
+#define ACREL_DTSD1352_TOTAL_ENERGY_ADDRESS                                                 (0x000A)
+#define ACREL_DTSD1352_ACREL_DTSD1352_ABC_VOLATGE_CURRENT_ADDRESS                           (0x0061)
+#define ACREL_DTSD1352_PT_CT_ADDRESS                                                        (0x008D)
+
+/*寄存器数量映射*/
+#define ACREL_DTSD1352_TOTAL_ENERGY_COUNT                                                   (2U)
+#define ACREL_DTSD1352_ACREL_DTSD1352_ABC_VOLATGE_CURRENT_COUNT                             (6U)
+#define ACREL_DTSD1352_PT_CT_COUNT                                                          (2U)
 
 /* DTSD1352 数据荷载结构体 */
 typedef struct Dev_Acrel_DTSD1352_t
