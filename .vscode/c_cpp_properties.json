@@ -1,0 +1,67 @@
+{
+    "configurations": [
+        {
+            "name": "STM32F407-Gateway (Keil ARMClang)",
+            "includePath": [
+                "${workspaceFolder}/Core/Inc",
+                "${workspaceFolder}/App/Inc",
+                "${workspaceFolder}/BSP/Inc",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
+                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Include",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/include",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F",
+                "${workspaceFolder}/LWIP/App",
+                "${workspaceFolder}/LWIP/Target",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/system",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/netif/ppp",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/lwip",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/lwip/apps",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/lwip/priv",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/lwip/prot",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/netif",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/compat/posix",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/compat/posix/net",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/compat/posix/sys",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/src/include/compat/stdc",
+                "${workspaceFolder}/Middlewares/Third_Party/LwIP/system/arch",
+                "${workspaceFolder}/Middlewares/Third_Party/nanoModbus/Inc",
+                "${workspaceFolder}/Middlewares/Third_Party/nanoModbus/Src",
+                "${workspaceFolder}App\\DevicesFunc"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32F407xx",
+                "NMBS_SERVER_DISABLED",
+                "NMBS_TCP_DISABLED",
+                "__CC_ARM=1",
+                "__forceinline=__inline",
+                "portFORCE_INLINE=__inline"
+            ],
+            "compilerPath": "D:/MCU_Tool/Keil5/Core/ARM/ARMCLANG/bin/armclang.exe",
+            "compilerArgs": [
+                "--target=arm-arm-none-eabi",
+                "-mcpu=cortex-m4"
+            ],
+            "cStandard": "c99",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "windows-clang-arm",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/Core",
+                    "${workspaceFolder}/App",
+                    "${workspaceFolder}/BSP",
+                    "${workspaceFolder}/Drivers",
+                    "${workspaceFolder}/Middlewares",
+                    "${workspaceFolder}/LWIP"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

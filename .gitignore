@@ -1,0 +1,43 @@
+# Keil MDK-ARM 构建输出
+# 当前工程的输出目录：MDK-ARM/STM32F407-Gateway/
+MDK-ARM/STM32F407-Gateway/
+
+# Keil 通用构建产物
+*.o
+*.d
+*.crf
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.dep
+*.lnp
+*.iex
+*.build_log.htm
+*.uvguix.*
+
+# Keil 本机用户配置
+*.uvoptx
+MDK-ARM/JLinkLog.txt
+MDK-ARM/JLinkSettings.ini
+
+# Keil/CMSIS 自动生成的运行时环境文件
+MDK-ARM/RTE/
+
+# STM32CubeMX 生成文件
+.mxproject
+*.ioc.bak
+
+# 通用临时文件
+*.bak
+*.tmp
+*.log
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# vscode隐私设置
+.vscode\settings.json
