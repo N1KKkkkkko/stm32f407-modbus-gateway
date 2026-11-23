@@ -24,7 +24,6 @@ static uint8_t RS485_dma_buffer[RS485_DMA_BUFFER_SIZE];
 static uint8_t RS485_ring_buffer[RS485_RING_BUFFER_SIZE];
 static volatile uint16_t RS485_ring_head = 0U;
 static volatile uint16_t RS485_ring_tail = 0U;
-static volatile uint16_t RS485_dma_last_position = 0U;
 static volatile uint8_t RS485_uart_error = 0U;
 static osThreadId_t RS485_parser_task = NULL;
 
@@ -44,7 +43,7 @@ static void RS485_RingPushFromISR(const uint8_t *data, uint16_t length)
         next_head = (uint16_t)((RS485_ring_head + 1U) %
                                RS485_RING_BUFFER_SIZE);
 
-        if (next_head == RS485_ring_tail)
+        if (next_head == RS485_ring_tail)       
         {
             RS485_uart_error = 1U;
             break;
@@ -103,8 +102,6 @@ static void RS485_SignalRxFromISR(void)
  */
 static uint8_t RS485_StartReceive(void)
 {
-    RS485_dma_last_position = 0U;
-
     return (HAL_UARTEx_ReceiveToIdle_DMA(
                 &huart2,
                 RS485_dma_buffer,
@@ -115,13 +112,18 @@ static uint8_t RS485_StartReceive(void)
 /* UART/DMA ISR callbacks ---------------------------------------------------*/
 
 /**
- * @brief HAL UART HT/TC/IDLE统一接收事件回调。
+ * @brief DMA 半满 HT、DMA 全满 TC、UART IDLE 这三类中断，统一收敛到 UARTEx 这个事件回调统一处理
  * @note  根据DMA增量位置复制字节到环形缓冲，并通知解析任务；
  *        不区分事件类型，Modbus帧解析由任务上下文完成。
  */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+/* 原循环DMA说明保留：
+ * 新数据末尾位置，因为是环形缓冲，所以用 % 做到取新数据末尾位置
+ * 没绕圈
+ * 绕了一圈
+ * 更新last_position
+ */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //Size 从 DMA 接收启动开始，到这次事件触发时，一共收到的总字节数
 {
-    uint16_t position;
     uint16_t length;
 
     if (huart->Instance != USART2)
@@ -129,40 +131,33 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         return;
     }
 
-    position = (uint16_t)(Size % RS485_DMA_BUFFER_SIZE);
-
-    if (position >= RS485_dma_last_position)
+    /* Normal DMA在IDLE或TC时提交完整接收段，半满HT不提前消费。 */
+    if (huart->RxEventType == HAL_UART_RXEVENT_HT)
     {
-        length = (uint16_t)(position - RS485_dma_last_position);
-        if (length > 0U)
-        {
-            RS485_RingPushFromISR(
-                &RS485_dma_buffer[RS485_dma_last_position],
-                length
-            );
-        }
-    }
-    else
-    {
-        length = (uint16_t)(
-            RS485_DMA_BUFFER_SIZE - RS485_dma_last_position
-        );
-        if (length > 0U)
-        {
-            RS485_RingPushFromISR(
-                &RS485_dma_buffer[RS485_dma_last_position],
-                length
-            );
-        }
-
-        if (position > 0U)
-        {
-            RS485_RingPushFromISR(&RS485_dma_buffer[0], position);
-        }
+        return;
     }
 
-    RS485_dma_last_position = position;
-    RS485_SignalRxFromISR();
+    length = Size; //Size表示本次DMA接收段的有效字节数
+
+    if (length > RS485_DMA_BUFFER_SIZE)
+    {
+        RS485_uart_error = 1U;
+        RS485_SignalRxFromISR();
+        return;
+    }
+
+    if (length > 0U)
+    {
+        RS485_RingPushFromISR(RS485_dma_buffer, length);
+        RS485_SignalRxFromISR(); //ISR中断中任务通知给Task_RS485.
+    }
+
+    /* IDLE或TC后重新启动下一次Normal DMA接收。 */
+    if (RS485_StartReceive() == 0U)
+    {
+        RS485_uart_error = 1U;
+        RS485_SignalRxFromISR();
+    }
 }
 
 /**
@@ -235,7 +230,7 @@ uint8_t RS485_PortRecover(void)
 void RS485_PortFlush(void)
 {
     taskENTER_CRITICAL();
-    RS485_ring_head = 0U;
+    RS485_ring_head = 0U;       
     RS485_ring_tail = 0U;
     taskEXIT_CRITICAL();
 
@@ -373,8 +368,8 @@ int32_t RS485_PortWrite(
     timeout_ms += 50U;
 
     HAL_GPIO_WritePin(
-        RS485_RD_E_GPIO_Port,
-        RS485_RD_E_Pin,
+        RS485_DE_NRE_GPIO_Port,
+        RS485_DE_NRE_Pin,
         GPIO_PIN_SET
     );
 
@@ -383,11 +378,11 @@ int32_t RS485_PortWrite(
             (uint8_t *)buffer,
             count,
             timeout_ms
-        ) != HAL_OK)
+        ) != HAL_OK)        //传输失败
     {
         HAL_GPIO_WritePin(
-            RS485_RD_E_GPIO_Port,
-            RS485_RD_E_Pin,
+            RS485_DE_NRE_GPIO_Port,
+            RS485_DE_NRE_Pin,
             GPIO_PIN_RESET
         );
         return -1;
@@ -408,8 +403,8 @@ int32_t RS485_PortWrite(
     }
 
     HAL_GPIO_WritePin(
-        RS485_RD_E_GPIO_Port,
-        RS485_RD_E_Pin,
+        RS485_DE_NRE_GPIO_Port,
+        RS485_DE_NRE_Pin,
         GPIO_PIN_RESET
     );
 

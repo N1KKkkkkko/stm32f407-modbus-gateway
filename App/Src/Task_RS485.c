@@ -5,16 +5,6 @@
 编 写 人：N1ghtoo
 注    意：通过Queue_Pollin_Tx接收请求，通过Queue_RS485_Tx返回响应
 ***********************************************************************/
-/***********************************************************************
- * Layer: Application / Modbus RTU Master Service
- *
- * This file owns Modbus semantics:
- *   request dequeue, slave address selection, nanoMODBUS calls, response
- *   validation, register results and response enqueue.
- *
- * It does not access USART2, DMA, IDLE, the RX ring or the RS485 DE pin.
- * Those hardware-link details are implemented in RS485_Port.c.
- ***********************************************************************/
 
 #include "cmsis_os.h"
 
@@ -153,10 +143,10 @@ static uint8_t RS485_ModbusServiceInit(void)
     }
 
     nmbs_platform_conf_create(&platform);
-    platform.transport = NMBS_TRANSPORT_RTU;
-    platform.read = RS485_PortRead;
-    platform.write = RS485_PortWrite;
-    platform.flush = RS485_TransportFlush;
+    platform.transport = NMBS_TRANSPORT_RTU;    //使用的协议类型
+    platform.read = RS485_PortRead;             //读函数需要对应硬件驱动的读函数
+    platform.write = RS485_PortWrite;           //写函数需要对应硬件驱动的写函数
+    platform.flush = RS485_TransportFlush;      //丢弃链路层环形缓冲中的旧字节
     platform.arg = NULL;
 
     if (nmbs_client_create(&RS485_nmbs, &platform) != NMBS_ERROR_NONE)
@@ -194,7 +184,7 @@ void Task_RS485_Run(void *argument)
 
     RS485_PortSetParserTask(osThreadGetId());
 
-    while (RS485_ModbusServiceInit() == 0U)
+    while (RS485_ModbusServiceInit() == 0U)     //初始化循环，成功则退出循环
     {
         osDelay(1000U);
     }
@@ -202,7 +192,7 @@ void Task_RS485_Run(void *argument)
     for (;;)
     {
         /*
-         * Task_Pollin -> Queue_Pollin_Tx -> Task_RS485.
+         * Task_Pollin -> Queue_Pollin_Tx -> Task_RS485.平时阻塞等待Pollin请求(Queue_Pollin_Tx消息队列)
          */
         if (osMessageQueueGet(
                 Queue_Pollin_TxHandle,
@@ -214,6 +204,7 @@ void Task_RS485_Run(void *argument)
             continue;
         }
 
+        /* 接到请求 */
         response = (RS485_Response_t){
             .status = RS485_STATUS_ERROR
         };

@@ -21,6 +21,7 @@
 #define RS485_POLL_RETRY_DELAY_MS 100U
 #define RS485_POLL_IDLE_DELAY_MS 10U
 
+/* 轮询状态结构体 */
 typedef struct
 {                           
     uint32_t next_poll_tick;            // 下次轮询最小时间戳,大于这个时间戳就可以轮询了
@@ -28,8 +29,8 @@ typedef struct
     uint8_t retry_count;                // 轮询失败重试次数,RS485_POLL_MAX_RETRIES 最大重试次数 超过就放弃本次轮询
     uint8_t online;                     // 设备在线状态,1:在线,0:离线       
     int32_t last_error;                 // 保存上次返回错误结果状态,1 ：通信失败 , -1 ：配置/参数不合法
-    union RS485_DeviceRuntime_t device_runtime;
-} RS485_SlaveMachineState_t;            // 轮询状态结构体
+    union RS485_DeviceRuntime_t device_runtime;       //运行态参数(解析函数计算时会用到)
+} RS485_SlaveMachineState_t;            
 
 static RS485_SlaveMachineState_t
     RS485_SlaveMachineStates[RS485_SLAVE_MACHINE_COUNT];

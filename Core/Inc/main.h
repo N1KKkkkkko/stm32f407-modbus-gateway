@@ -62,13 +62,11 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+/* USER CODE BEGIN Private defines */
 #define SPI2_CS_Pin GPIO_PIN_3
 #define SPI2_CS_GPIO_Port GPIOE
-#define RS485_RD_E_Pin GPIO_PIN_7
-#define RS485_RD_E_GPIO_Port GPIOD
-
-/* USER CODE BEGIN Private defines */
-
+#define RS485_DE_NRE_Pin GPIO_PIN_7
+#define RS485_DE_NRE_GPIO_Port GPIOD
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
