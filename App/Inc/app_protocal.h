@@ -47,7 +47,7 @@ typedef struct
     uint16_t write_value;
 } RS485_Request_t;
 
-/*Task_Pollin接收响应 RS485 的Modbus数据结构体*/
+/*Task_Pollin接收Task_RS485 的Modbus数据的结构体*/
 typedef struct
 {
     RS485_Status_t status;

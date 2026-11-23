@@ -3,13 +3,15 @@
 功    能： 轮询任务
 编写时间：2026-11-20
 编 写 人：N1ghtoo
-注    意:RS485_PackRawRegisters
-         RS485_PollDeviceOnce                  
-         RS485_FindDueDevice            遍历线性数组,并判断是否符合最小轮询周期,符合就进入进入轮询,不符合则跳过
-         RS485_PublishDeviceData        将轮询结果发布到Queue_DeviceData_Rx          
-         Task_Pollin_Run                freertos任务入口函数
+注    意:
+        RS485_PackRawRegisters
+        RS485_ValidateCurrentFunction           判断配置是否合法
+        RS485_PollDeviceOnce                    使用当前功能执行请求
+        RS485_HandlePollFailure                 处理失败后的状态和调度                
+        RS485_FindDueDevice                     遍历线性数组,并判断是否符合最小轮询周期,符合就进入进入轮询,不符合则跳过
+        RS485_PublishDeviceData                 将轮询结果发布到Queue_DeviceData_Rx          
+        Task_Pollin_Run                         freertos任务入口函数
 ***********************************************************************/
-
 #include "cmsis_os.h"
 
 #include "app_tasks.h"
@@ -217,8 +219,89 @@ static void RS485_PublishDeviceData(
     }
 }
 
+/* 只校验设备模板和当前功能配置，错误统一返回无效参数。 */
+static RS485_Status_t RS485_ValidateCurrentFunction(
+    const RS485_SlaveMachine_t *device,
+    const RS485_SlaveMachineState_t *device_state,
+    RS485_Response_t *response)
+{
+    const DeviceTypeProfile_t *profile;
+
+    if ((device == NULL) ||
+        (device_state == NULL) ||
+        (response == NULL))
+    {
+        return RS485_STATUS_ERROR;
+    }
+
+    profile = device->profile;
+
+    if ((profile == NULL) ||
+        (profile->func_table == NULL) ||
+        (profile->func_count == 0U) ||
+        (profile->max_regs_per_func == 0U))
+    {
+        response->status = RS485_STATUS_ERROR;
+        response->error_code = NMBS_ERROR_INVALID_ARGUMENT;
+        response->register_count = 0U;
+        return RS485_STATUS_ERROR;
+    }
+
+    if (device_state->function_index >= profile->func_count)
+    {
+        response->status = RS485_STATUS_ERROR;
+        response->error_code = NMBS_ERROR_INVALID_ARGUMENT;
+        response->register_count = 0U;
+        return RS485_STATUS_ERROR;
+    }
+
+    if ((profile->func_table[device_state->function_index].quantity == 0U) ||
+        (profile->func_table[device_state->function_index].quantity >
+         profile->max_regs_per_func) ||
+        (profile->func_table[device_state->function_index].quantity >
+         RS485_MAX_REGISTERS))
+    {
+        response->status = RS485_STATUS_ERROR;
+        response->error_code = NMBS_ERROR_INVALID_ARGUMENT;
+        response->register_count = 0U;
+        return RS485_STATUS_ERROR;
+    }
+
+    return RS485_STATUS_OK;
+}
+
+/* 轮询失败,记录错误码,设置设备离线状态,并根据重试次数决定是否重试或跳过 */
+static void RS485_HandlePollFailure(
+    const RS485_SlaveMachine_t *device,
+    RS485_SlaveMachineState_t *device_state,
+    int32_t error_code,
+    uint32_t finish_tick)
+{
+    device_state->last_error = error_code;
+    device_state->online = 0U;
+
+    if ((error_code != NMBS_ERROR_INVALID_ARGUMENT) &&
+        (device_state->retry_count < RS485_POLL_MAX_RETRIES))  //可重试
+    {
+        device_state->retry_count++;
+        device_state->next_poll_tick =
+            finish_tick +
+            ((RS485_POLL_RETRY_DELAY_MS *
+              osKernelGetTickFreq()) / 1000U);
+    }
+    else
+    {
+        device_state->retry_count = 0U;
+        device_state->function_index = 0U;
+        device_state->next_poll_tick =
+            finish_tick +
+            ((device->poll_interval_ms *
+              osKernelGetTickFreq()) / 1000U);
+    }
+}
+
 /**
- * @brief Polling scheduler task.
+ * @brief 轮询运行函数.
  * @note  No TIM interrupt is used. After each response/failure the next
  *        due device is selected by elapsed time.
  */
@@ -230,8 +313,7 @@ void Task_Pollin_Run(void *argument)
     int32_t device_index;
     RS485_Status_t result;  /* 0: OK, 1: error; details in response.error_code */
     const RS485_SlaveMachine_t *device;
-    const DeviceTypeProfile_t *profile;
-    const RS485_FuncTemplate_t *function;
+    const RS485_FuncTemplate_t *function;           //device 中 有 function，用一个临时指针保留本次调用选中的子配置，不在多个函数间重复解析。
     RS485_SlaveMachineState_t *device_state;
 
     (void)argument;
@@ -246,47 +328,28 @@ void Task_Pollin_Run(void *argument)
             osDelay(RS485_POLL_IDLE_DELAY_MS);
             continue;
         }
-
+        
+        //初始化
         device = &RS485_SlaveMachines[device_index];
-        device_state = &RS485_SlaveMachineStates[device_index];
+        function = NULL;                                        
+        device_state = &RS485_SlaveMachineStates[device_index]; 
         response = (RS485_Response_t){
             .status = RS485_STATUS_ERROR
         };
-        profile = device->profile;
-        function = NULL;
 
-        if ((profile == NULL) ||
-            (profile->func_table == NULL) ||
-            (profile->func_count == 0U) ||
-            (profile->max_regs_per_func == 0U))
+        result = RS485_ValidateCurrentFunction(
+            device,
+            device_state,
+            &response
+        );
+
+        if (result == RS485_STATUS_OK)
         {
-            response.status = RS485_STATUS_ERROR;
-            response.error_code = NMBS_ERROR_INVALID_ARGUMENT;
-            response.register_count = 0U;
-            result = RS485_STATUS_ERROR;
-        }
-        else
-        {
-            if (device_state->function_index >= profile->func_count)
-            {
-                device_state->function_index = 0U;
-            }
-
-            function = &profile->func_table[device_state->function_index];
-
-            if ((function->quantity == 0U) ||
-                (function->quantity > profile->max_regs_per_func) ||
-                (function->quantity > RS485_MAX_REGISTERS))
-            {
-                response.status = RS485_STATUS_ERROR;
-                response.error_code = NMBS_ERROR_INVALID_ARGUMENT;
-                response.register_count = 0U;
-                result = RS485_STATUS_ERROR;
-            }
-            else
-            {
-                result = RS485_PollDeviceOnce(device, function, &response);
-            }
+            function =                                  //校验通过后function显式取得本次选中的功能模板
+                &device->profile->func_table[
+                    device_state->function_index        //设备状态里保存了功能index
+                ];
+            result = RS485_PollDeviceOnce(device, function, &response);
         }
 
         finish_tick = osKernelGetTickCount();
@@ -303,7 +366,8 @@ void Task_Pollin_Run(void *argument)
             );
 
             device_state->function_index++;
-            if (device_state->function_index >= profile->func_count)
+            if (device_state->function_index >=
+                device->profile->func_count)
             {
                 device_state->function_index = 0U;
                 device_state->next_poll_tick =
@@ -317,32 +381,14 @@ void Task_Pollin_Run(void *argument)
                 device_state->next_poll_tick = finish_tick;
             }
         }
-        else //状态异常
+        else                            //状态异常
         {
-            /* 轮询失败,记录错误码,设置设备离线状态,并根据重试次数决定是否重试或跳过 */
-            {
-                device_state->last_error = response.error_code;
-                device_state->online = 0U;
-
-                if (response.error_code != NMBS_ERROR_INVALID_ARGUMENT 
-                && device_state->retry_count < RS485_POLL_MAX_RETRIES)  //可重试
-                {
-                    device_state->retry_count++;
-                    device_state->next_poll_tick =
-                    finish_tick +
-                    ((RS485_POLL_RETRY_DELAY_MS *
-                      osKernelGetTickFreq()) / 1000U);
-                }
-                else
-                {
-                    device_state->retry_count = 0U;
-                    device_state->function_index = 0U;
-                    device_state->next_poll_tick =
-                    finish_tick +
-                    ((device->poll_interval_ms *
-                      osKernelGetTickFreq()) / 1000U);
-                }
-            }
+            RS485_HandlePollFailure(
+                device,
+                device_state,
+                response.error_code,
+                finish_tick
+            );
         }
     }
 }
