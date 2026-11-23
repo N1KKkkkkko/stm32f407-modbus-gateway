@@ -20,11 +20,18 @@
 
 /* ================= 1.功能表 2.设备解析函数 3.设备类型具体配置 4.设备实例 模板  ================= */
 
+/* 设备类型运行态联合体，新设备在此增加自己的运行态结构体。 */
+union RS485_DeviceRuntime_t
+{
+    Acrel_DTSD1352_Runtime_t Acrel;
+};
+
 /* 设备数据解析函数指针模板 */
 typedef void (*RS485_Read_SlaveUnpackData_t)(
     const uint16_t *registers,
     uint16_t register_count,
-    DeviceData_Rx_t *device_data
+    DeviceData_Rx_t *device_data,
+    union RS485_DeviceRuntime_t *device_runtime
 );   
 
 /* 功能模板 */

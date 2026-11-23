@@ -38,3 +38,6 @@ MDK-ARM/RTE/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# vscode隐私设置
+.vscode\settings.json

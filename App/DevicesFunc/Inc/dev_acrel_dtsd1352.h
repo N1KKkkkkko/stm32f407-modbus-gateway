@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 struct DeviceData_Rx_t;
+union RS485_DeviceRuntime_t;
 
 /*初始地址映射*/
 #define ACREL_DTSD1352_TOTAL_ENERGY_ADDRESS                                                 (0x000A)
@@ -30,20 +31,31 @@ typedef struct Dev_Acrel_DTSD1352_t
     uint8_t ct;                // 电流变比
 }Dev_Acrel_DTSD1352_t;
 
+/* DTSD1352运行期数据，按设备实例保存。 */
+typedef struct
+{
+    uint8_t pt;
+    uint8_t ct;
+    uint8_t ratio_valid;
+} Acrel_DTSD1352_Runtime_t;
+
 
 void Acrel_DTSD1352_Pack_PTCT(
     const uint16_t *registers,
     uint16_t register_count,
-    struct DeviceData_Rx_t *device_data);
+    struct DeviceData_Rx_t *device_data,
+    union RS485_DeviceRuntime_t *device_runtime);
 
 void Acrel_DTSD1352_Pack_EnergyTotal(
     const uint16_t *registers,
     uint16_t register_count,
-    struct DeviceData_Rx_t *device_data);
+    struct DeviceData_Rx_t *device_data,
+    union RS485_DeviceRuntime_t *device_runtime);
 
 void Acrel_DTSD1352_Pack_Current_Voltage_ABC(
     const uint16_t *registers,
     uint16_t register_count,
-    struct DeviceData_Rx_t *device_data);
+    struct DeviceData_Rx_t *device_data,
+    union RS485_DeviceRuntime_t *device_runtime);
 
 #endif /* DEV_ACREL_DTSD1352_H */

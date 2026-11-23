@@ -28,6 +28,7 @@ typedef struct
     uint8_t retry_count;                // 轮询失败重试次数,RS485_POLL_MAX_RETRIES 最大重试次数 超过就放弃本次轮询
     uint8_t online;                     // 设备在线状态,1:在线,0:离线       
     int32_t last_error;                 // 保存上次返回错误结果状态,1 ：通信失败 , -1 ：配置/参数不合法
+    union RS485_DeviceRuntime_t device_runtime;
 } RS485_SlaveMachineState_t;            // 轮询状态结构体
 
 static RS485_SlaveMachineState_t
@@ -178,7 +179,8 @@ static int32_t RS485_FindDueDevice(uint32_t start_tick)
 static void RS485_PublishDeviceData(
     const RS485_SlaveMachine_t *device,
     const RS485_FuncTemplate_t *function,
-    const RS485_Response_t *response)
+    const RS485_Response_t *response,
+    union RS485_DeviceRuntime_t *device_runtime)
 {
     DeviceData_Rx_t device_data = {0};
 
@@ -186,6 +188,7 @@ static void RS485_PublishDeviceData(
         (function == NULL) ||
         (function->pack_data == NULL) ||
         (response == NULL) ||
+        (device_runtime == NULL) ||
         (response->status != RS485_STATUS_OK) ||
         (response->register_count == 0U))
     {
@@ -199,7 +202,8 @@ static void RS485_PublishDeviceData(
     function->pack_data(
         response->registers,
         response->register_count,
-        &device_data
+        &device_data,
+        device_runtime
     );
 
     if (device_data.data_len > 0U)
@@ -329,7 +333,12 @@ void Task_Pollin_Run(void *argument)
         {
             device_state->online = 1U;       
             device_state->retry_count = 0U;
-            RS485_PublishDeviceData(device, function, &response);
+            RS485_PublishDeviceData(
+                device,
+                function,
+                &response,
+                &device_state->device_runtime
+            );
 
             device_state->function_index++;
             if (device_state->function_index >= profile->func_count)
