@@ -16,7 +16,7 @@
 #include "RS485_Port.h"
 #include "usart.h"
 
-#define RS485_DMA_BUFFER_SIZE 512U
+#define RS485_DMA_BUFFER_SIZE 258U
 #define RS485_RING_BUFFER_SIZE 512U
 #define RS485_RX_READY_FLAG (1UL << 0U)
 

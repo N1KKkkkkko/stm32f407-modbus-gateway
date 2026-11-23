@@ -14,7 +14,6 @@
 
 #include "app_tasks.h"
 #include "nanomodbus.h"
-#include "RS485_Port.h"
 #include "SlaveMachine_form.h"
 
 #define RS485_POLL_MAX_RETRIES 3U       //最大重试次数
@@ -218,34 +217,6 @@ static void RS485_PublishDeviceData(
     }
 }
 
-/* 保证相邻功能请求之间满足Modbus RTU最小静默时间。 */
-static void RS485_WaitMinimumSilentTime(
-    uint32_t finish_func_time,
-    uint8_t has_previous_frame,
-    uint32_t *star_func_time)
-{
-    uint32_t now_tick;
-    uint32_t elapsed_tick;
-    uint32_t silent_tick;
-
-    if ((has_previous_frame != 0U) && (star_func_time != NULL))
-    {
-        silent_tick = RS485_PortGetSilentTimeTicks();
-        now_tick = osKernelGetTickCount();
-        elapsed_tick = now_tick - finish_func_time;
-
-        if (elapsed_tick < silent_tick)
-        {
-            osDelay(silent_tick - elapsed_tick);
-        }
-    }
-
-    if (star_func_time != NULL)
-    {
-        *star_func_time = osKernelGetTickCount();
-    }
-}
-
 /**
  * @brief Polling scheduler task.
  * @note  No TIM interrupt is used. After each response/failure the next
@@ -256,9 +227,6 @@ void Task_Pollin_Run(void *argument)
     RS485_Response_t response;
     uint32_t start_tick;
     uint32_t finish_tick;
-    uint32_t star_func_time = 0U;
-    uint32_t finish_func_time = 0U;
-    uint8_t has_previous_frame = 0U;
     int32_t device_index;
     RS485_Status_t result;  /* 0: OK, 1: error; details in response.error_code */
     const RS485_SlaveMachine_t *device;
@@ -317,14 +285,7 @@ void Task_Pollin_Run(void *argument)
             }
             else
             {
-                RS485_WaitMinimumSilentTime(
-                    finish_func_time,
-                    has_previous_frame,
-                    &star_func_time
-                );
                 result = RS485_PollDeviceOnce(device, function, &response);
-                finish_func_time = osKernelGetTickCount();
-                has_previous_frame = 1U;
             }
         }
 
@@ -353,8 +314,7 @@ void Task_Pollin_Run(void *argument)
             else
             {
                 /* Continue this device's remaining function templates. */
-                device_state->next_poll_tick =
-                    finish_func_time + RS485_PortGetSilentTimeTicks();
+                device_state->next_poll_tick = finish_tick;
             }
         }
         else //状态异常

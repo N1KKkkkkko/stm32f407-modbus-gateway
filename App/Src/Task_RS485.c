@@ -16,6 +16,8 @@
 #define RS485_DEFAULT_BYTE_TIMEOUT_MS 2
 
 static nmbs_t RS485_nmbs;
+static uint32_t RS485_last_finish_tick = 0U;
+static uint8_t RS485_has_last_frame = 0U;
 
 static void RS485_TransportFlush(nmbs_t *nmbs, void *argument);
 static void RS485_ExecuteRequest(
@@ -209,19 +211,34 @@ void Task_RS485_Run(void *argument)
             .status = RS485_STATUS_ERROR
         };
 
-        if (RS485_PortRecover() == 0U)
+        if (RS485_PortRecover() == 0U)      //启动DMA失败
         {
             RS485_SetResponseError(
                 &response,
                 NMBS_ERROR_TRANSPORT
             );
         }
-        else
+        else                                //启动成功s
         {
+            /* RS485总线唯一执行者统一保证相邻Modbus帧的最小静默时间。 */
+            if (RS485_has_last_frame != 0U)
+            {
+                uint32_t now_tick = osKernelGetTickCount();
+                uint32_t silent_tick = RS485_PortGetSilentTimeTicks();
+                uint32_t elapsed_tick = now_tick - RS485_last_finish_tick;
+
+                if (elapsed_tick < silent_tick)
+                {
+                    osDelay(silent_tick - elapsed_tick);
+                }
+            }
+
             RS485_ExecuteRequest(
                 &request,
                 &response
             );
+            RS485_last_finish_tick = osKernelGetTickCount();
+            RS485_has_last_frame = 1U;
         }
 
         /*
