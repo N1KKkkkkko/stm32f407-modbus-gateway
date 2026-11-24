@@ -223,8 +223,8 @@ uint8_t Get_Temp(DeviceData_Rx_t *temp_data) //传指针可以给实际数据赋
     temp_data->timestamp = TimeStamp;
     temp_data->dev_type = DEV_TYPE_GATEWAY_SELF;
     temp_data->dev_id = 0x00U;
-    temp_data->data_len = sizeof(temp_data->payload.float_val[0]);
-    temp_data->payload.float_val[0] = (float)temp_celsius;
+    temp_data->data_len = sizeof(Dev_Gateway_Temp_t);
+    temp_data->payload.GatewaySelf.temperature_c = (float)temp_celsius;
 
     return 1U;
 }

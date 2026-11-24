@@ -31,6 +31,12 @@ typedef enum {
 // 消息中的设备类型固定为32位，避免不同编译器改变结构体布局
 typedef uint32_t DeviceType_t;
 
+/* 网关自身运行数据负载 */
+typedef struct
+{
+    float temperature_c;       // 芯片温度，单位摄氏度
+} Dev_Gateway_Temp_t;
+
 // Queue_DeviceData_Rx Item
 // 设备数据 （经过USART,Modbus RTU协议拆解后的设备数据 和 网关温度）
 typedef struct DeviceData_Rx_t {
@@ -40,6 +46,7 @@ typedef struct DeviceData_Rx_t {
     uint8_t  data_len; // 数据长度
     union {
         Dev_Acrel_DTSD1352_t Acrel;
+        Dev_Gateway_Temp_t GatewaySelf;
     } payload; // 数据载荷(实际数据)，支持多种类型，按设备类型解析
     uint8_t reserved[4]; // 显式填充到32字节，与静态队列Item大小一致
 } DeviceData_Rx_t;
