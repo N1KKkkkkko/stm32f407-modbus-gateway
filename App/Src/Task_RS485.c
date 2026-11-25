@@ -3,7 +3,7 @@
 功    能： Modbus RTU主站服务任务
 编写时间：2026-11-18
 编 写 人：N1ghtoo
-注    意：通过Queue_Pollin_Tx接收请求，通过Queue_RS485_Tx返回响应
+注    意：通过Queue_Modbus_Request接收请求，通过Queue_Modbus_Respond返回响应
 ***********************************************************************/
 
 #include "cmsis_os.h"
@@ -67,7 +67,7 @@ static void RS485_ExecuteRequest(
     {
         RS485_SetResponseError(response, NMBS_ERROR_INVALID_ARGUMENT);
         return;
-    }
+    }//错误判断
 
     response->status = RS485_STATUS_ERROR;
     response->error_code = NMBS_ERROR_INVALID_ARGUMENT;
@@ -138,8 +138,8 @@ static uint8_t RS485_ModbusServiceInit(void)
 {
     nmbs_platform_conf platform;
 
-    if ((Queue_Pollin_TxHandle == NULL) ||
-        (Queue_RS485_TxHandle == NULL))
+    if ((Queue_Modbus_RequestHandle == NULL) ||
+        (Queue_Modbus_RespondHandle == NULL))
     {
         return 0U;
     }
@@ -175,7 +175,7 @@ static uint8_t RS485_ModbusServiceInit(void)
 
 /**
  * @brief Task_RS485主循环。
- * @note  独占RS485总线，串行处理请求；没有请求时阻塞在Queue_Pollin_Tx。
+ * @note  独占RS485总线，串行处理请求；没有请求时阻塞在Queue_Modbus_Request。
  */
 void Task_RS485_Run(void *argument)
 {
@@ -186,7 +186,7 @@ void Task_RS485_Run(void *argument)
 
     RS485_PortSetParserTask(osThreadGetId());
 
-    while (RS485_ModbusServiceInit() == 0U)     //初始化循环，成功则退出循环
+    while (RS485_ModbusServiceInit() == 0U)     //协议栈初始化循环，成功则退出循环
     {
         osDelay(1000U);
     }
@@ -194,10 +194,10 @@ void Task_RS485_Run(void *argument)
     for (;;)
     {
         /*
-         * Task_Pollin -> Queue_Pollin_Tx -> Task_RS485.平时阻塞等待Pollin请求(Queue_Pollin_Tx消息队列)
+         * Task_Pollin -> Queue_Modbus_Request -> Task_RS485.平时阻塞等待Pollin请求(Queue_Modbus_Request消息队列)
          */
         if (osMessageQueueGet(
-                Queue_Pollin_TxHandle,
+                Queue_Modbus_RequestHandle,
                 &request,
                 NULL,
                 osWaitForever
@@ -218,7 +218,7 @@ void Task_RS485_Run(void *argument)
                 NMBS_ERROR_TRANSPORT
             );
         }
-        else                                //启动成功s
+        else                                //启动成功
         {
             /* RS485总线唯一执行者统一保证相邻Modbus帧的最小静默时间。 */
             if (RS485_has_last_frame != 0U)
@@ -242,11 +242,11 @@ void Task_RS485_Run(void *argument)
         }
 
         /*
-         * Task_RS485 -> Queue_RS485_Tx -> Task_Pollin.
+         * Task_RS485 -> Queue_Modbus_Respond -> Task_Pollin.
          * osMessageQueuePut copies the complete response into queue storage.
          */
         (void)osMessageQueuePut(
-            Queue_RS485_TxHandle,
+            Queue_Modbus_RespondHandle,
             &response,
             0U,
             osWaitForever

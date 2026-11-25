@@ -187,27 +187,27 @@ const osMessageQueueAttr_t Queue_LogData_attributes = {
   .mq_mem = &Queue_LogDataBuffer,
   .mq_size = sizeof(Queue_LogDataBuffer)
 };
-/* Definitions for Queue_Pollin_Tx */
-osMessageQueueId_t Queue_Pollin_TxHandle;
-uint8_t Queue_Pollin_TxBuffer[ 1 * 16 ];
-osStaticMessageQDef_t Queue_Pollin_TxControlBlock;
-const osMessageQueueAttr_t Queue_Pollin_Tx_attributes = {
-  .name = "Queue_Pollin_Tx",
-  .cb_mem = &Queue_Pollin_TxControlBlock,
-  .cb_size = sizeof(Queue_Pollin_TxControlBlock),
-  .mq_mem = &Queue_Pollin_TxBuffer,
-  .mq_size = sizeof(Queue_Pollin_TxBuffer)
+/* Definitions for Queue_Modbus_Request */
+osMessageQueueId_t Queue_Modbus_RequestHandle;
+uint8_t Queue_Modbus_RequestBuffer[ 1 * 16 ];
+osStaticMessageQDef_t Queue_Modbus_RequestControlBlock;
+const osMessageQueueAttr_t Queue_Modbus_Request_attributes = {
+  .name = "Queue_Modbus_Request",
+  .cb_mem = &Queue_Modbus_RequestControlBlock,
+  .cb_size = sizeof(Queue_Modbus_RequestControlBlock),
+  .mq_mem = &Queue_Modbus_RequestBuffer,
+  .mq_size = sizeof(Queue_Modbus_RequestBuffer)
 };
-/* Definitions for Queue_RS485_Tx */
-osMessageQueueId_t Queue_RS485_TxHandle;
-uint8_t Queue_RS485_TxBuffer[ 1 * 76 ];
-osStaticMessageQDef_t Queue_RS485_TxControlBlock;
-const osMessageQueueAttr_t Queue_RS485_Tx_attributes = {
-  .name = "Queue_RS485_Tx",
-  .cb_mem = &Queue_RS485_TxControlBlock,
-  .cb_size = sizeof(Queue_RS485_TxControlBlock),
-  .mq_mem = &Queue_RS485_TxBuffer,
-  .mq_size = sizeof(Queue_RS485_TxBuffer)
+/* Definitions for Queue_Modbus_Respond */
+osMessageQueueId_t Queue_Modbus_RespondHandle;
+uint8_t Queue_Modbus_RespondBuffer[ 1 * 76 ];
+osStaticMessageQDef_t Queue_Modbus_RespondControlBlock;
+const osMessageQueueAttr_t Queue_Modbus_Respond_attributes = {
+  .name = "Queue_Modbus_Respond",
+  .cb_mem = &Queue_Modbus_RespondControlBlock,
+  .cb_size = sizeof(Queue_Modbus_RespondControlBlock),
+  .mq_mem = &Queue_Modbus_RespondBuffer,
+  .mq_size = sizeof(Queue_Modbus_RespondBuffer)
 };
 /* Definitions for Mutex_P_R */
 osMutexId_t Mutex_P_RHandle;
@@ -271,11 +271,11 @@ void MX_FREERTOS_Init(void) {
   /* creation of Queue_LogData */
   Queue_LogDataHandle = osMessageQueueNew (20, 12, &Queue_LogData_attributes);
 
-  /* creation of Queue_Pollin_Tx */
-  Queue_Pollin_TxHandle = osMessageQueueNew (1, 16, &Queue_Pollin_Tx_attributes);
+  /* creation of Queue_Modbus_Request */
+  Queue_Modbus_RequestHandle = osMessageQueueNew (1, 16, &Queue_Modbus_Request_attributes);
 
-  /* creation of Queue_RS485_Tx */
-  Queue_RS485_TxHandle = osMessageQueueNew (1, 76, &Queue_RS485_Tx_attributes);
+  /* creation of Queue_Modbus_Respond */
+  Queue_Modbus_RespondHandle = osMessageQueueNew (1, 76, &Queue_Modbus_Respond_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */

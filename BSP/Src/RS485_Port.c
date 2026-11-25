@@ -260,8 +260,8 @@ uint32_t RS485_PortGetSilentTimeTicks(void)
     }
     else
     {
-        silent_time_us =
-            (38500000U + baud_rate - 1U) / baud_rate;
+        silent_time_us =                              //字符时间依赖UART硬件帧位数而不是Modbus APU
+            (38500000U + baud_rate - 1U) / baud_rate; //这里默认帧是11bit,uart帧 1 起始 + 8 数据 + 1 校验 + 1 停止
     }
 
     tick_count =

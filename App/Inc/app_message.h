@@ -11,11 +11,14 @@
 
 #include <stdint.h>
 #include "dev_acrel_dtsd1352.h"
+#include "app_protocal.h"
 
 #define MAX_PAYLOAD_LEN 16
 #define POOL_BLOCK_COUNT 30  // 内存池 30 块，能扛短时离线积压
 #define DEVICE_DATA_RX_QUEUE_ITEM_SIZE 48U
 #define LOG_DATA_QUEUE_ITEM_SIZE 12U
+#define RS485_REQUEST_QUEUE_ITEM_SIZE  16U
+#define RS485_RESPONSE_QUEUE_ITEM_SIZE 76U
 
 //设备类型值
 typedef enum {
@@ -69,12 +72,40 @@ typedef struct {
     uint16_t      reserved;   // 2 字节：预留对齐或存错误码 (如 Modbus 异常码)
 } LogData_t;          // 对齐后 12 字节
 
+/*Task_Pollin发送请求 RS485 的Modbus请求结构体*/
+typedef struct
+{
+    uint8_t slave_address;
+    ModbusFunction_t function;
+    uint16_t register_address;
+    uint16_t register_count;
+    uint16_t write_value;
+} RS485_Request_t;
+
+/*Task_Pollin接收Task_RS485 的Modbus数据的结构体*/
+typedef struct
+{
+    RS485_Status_t status;
+    int32_t error_code;
+    uint16_t register_count;
+    uint16_t registers[RS485_MAX_REGISTERS];
+} RS485_Response_t;
+
 typedef char DeviceData_RxQueueItemSizeCheck[
     (sizeof(DeviceData_Rx_t) == DEVICE_DATA_RX_QUEUE_ITEM_SIZE) ? 1 : -1
 ];
 
 typedef char LogDataQueueItemSizeCheck[
     (sizeof(LogData_t) == LOG_DATA_QUEUE_ITEM_SIZE) ? 1 : -1
+];
+
+/*检查队列项大小是否符合标准 */
+typedef char RS485RequestQueueItemSizeCheck[
+    (sizeof(RS485_Request_t) == RS485_REQUEST_QUEUE_ITEM_SIZE) ? 1 : -1
+];
+
+typedef char RS485ResponseQueueItemSizeCheck[
+    (sizeof(RS485_Response_t) == RS485_RESPONSE_QUEUE_ITEM_SIZE) ? 1 : -1
 ];
 
 #endif // APP_MESSAGE_H

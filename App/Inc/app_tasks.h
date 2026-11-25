@@ -19,11 +19,11 @@
 extern osThreadId_t Task_PollinHandle;
 extern osMessageQueueId_t Queue_DeviceData_RxHandle;
 
-/* Queue_Pollin_Tx: Task_Pollin -> Task_RS485 (one RS485_Request_t) */
-extern osMessageQueueId_t Queue_Pollin_TxHandle;
+/* Queue_Modbus_Request: Task_Pollin -> Task_RS485 (one RS485_Request_t) */
+extern osMessageQueueId_t Queue_Modbus_RequestHandle;
 
-/* Queue_RS485_Tx: Task_RS485 -> Task_Pollin (one RS485_Response_t) */
-extern osMessageQueueId_t Queue_RS485_TxHandle;
+/* Queue_Modbus_Respond: Task_RS485 -> Task_Pollin (one RS485_Response_t) */
+extern osMessageQueueId_t Queue_Modbus_RespondHandle;
 
 // Task_Edge.c
 extern volatile uint32_t TimeStamp;
