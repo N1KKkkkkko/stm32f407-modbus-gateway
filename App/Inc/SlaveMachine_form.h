@@ -48,8 +48,7 @@ typedef struct
 // 设备类型配置表，包含 功能表 ，供设备实例使用
 typedef struct
 {
-    DeviceType_t device_type;                   //设备类型值                   
-    const char *type_name;                      //设备类型名称
+    DeviceType_t device_type;                   //设备类型枚举值                   
     uint16_t max_regs_per_func;                 //每个功能码最大寄存器数量，避免一次性请求过多寄存器
     uint8_t func_count;                         //功能码数量
     const RS485_FuncTemplate_t *func_table;     //一类设备对应功能表
@@ -58,10 +57,10 @@ typedef struct
 /* 具体从站设备模板 */
 typedef struct
 {
-    uint8_t enabled;                          //轮询使能开关
-    uint8_t slave_address;
-    uint32_t poll_interval_ms;
-    const DeviceTypeProfile_t *profile;
+    uint8_t enabled;                            //轮询使能开关
+    uint8_t slave_address;                      //从站地址
+    uint32_t poll_interval_ms;                  //轮询时间  
+    const DeviceTypeProfile_t *profile;         //设备类型模板
 } RS485_SlaveMachine_t;
 
 /* ================= Acrel DTSD1352 电表 功能表  ================= */
@@ -91,7 +90,6 @@ static const RS485_FuncTemplate_t Acrel_DTSD1352_Funcs[] =
 static const DeviceTypeProfile_t Acrel_DTSD1352_Profile =
 {
     .device_type = DEV_TYPE_ACREL_METER,
-    .type_name = "Acrel DTSD1352",
     .max_regs_per_func = 6U,
     .func_count = (uint8_t)RS485_ARRAY_COUNT(Acrel_DTSD1352_Funcs),
     .func_table = Acrel_DTSD1352_Funcs

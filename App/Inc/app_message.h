@@ -31,7 +31,7 @@ typedef enum {
     // ... 以后现场加新设备，直接在这里加类型即可
 } DeviceTypeValue_t;
 
-// 消息中的设备类型固定为32位，避免不同编译器改变结构体布局
+// 消息中的设备类型固定为32位，避免不同编译器改变结构体布局,里面存储的是DeviceTypeValue_t枚举常量
 typedef uint32_t DeviceType_t;
 
 /* 网关自身运行数据负载 */
