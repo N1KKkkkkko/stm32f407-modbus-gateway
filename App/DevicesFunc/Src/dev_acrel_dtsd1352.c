@@ -34,7 +34,7 @@ static uint8_t Acrel_GetCT(
  * 0. PT,CT
  * 寄存器：地址0x008D,数量2 → PT、CT
  ***********************************************************************/
-void Acrel_DTSD1352_Pack_PTCT(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_t *device_data, union RS485_DeviceRuntime_t *device_runtime)
+void Acrel_DTSD1352_Pack_PTCT(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_Data_t *device_data, union RS485_DeviceRuntime_t *device_runtime)
 {
     if (registers == NULL || device_data == NULL || register_count < ACREL_DTSD1352_PT_CT_COUNT)
     {
@@ -56,7 +56,7 @@ void Acrel_DTSD1352_Pack_PTCT(const uint16_t *registers, uint16_t register_count
  * 1. 当前正向总有功电能解析
  * 寄存器：地址0x000A，数量2 → 当前正向总有功电能_H、当前正向总有功电能_L
  ***********************************************************************/
-void Acrel_DTSD1352_Pack_EnergyTotal(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_t *device_data, union RS485_DeviceRuntime_t *device_runtime)
+void Acrel_DTSD1352_Pack_EnergyTotal(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_Data_t *device_data, union RS485_DeviceRuntime_t *device_runtime)
 {
     if (registers == NULL || device_data == NULL || register_count < ACREL_DTSD1352_TOTAL_ENERGY_COUNT)
     {
@@ -76,7 +76,7 @@ void Acrel_DTSD1352_Pack_EnergyTotal(const uint16_t *registers, uint16_t registe
  * 2. 三相电压电流解析
  * 寄存器：地址0x0061，数量6 → Ua、Ub、Uc、Ia、Ib、Ic
  ***********************************************************************/
-void Acrel_DTSD1352_Pack_Current_Voltage_ABC(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_t *device_data, union RS485_DeviceRuntime_t *device_runtime)
+void Acrel_DTSD1352_Pack_Current_Voltage_ABC(const uint16_t *registers, uint16_t register_count, DeviceData_Rx_Data_t *device_data, union RS485_DeviceRuntime_t *device_runtime)
 {
     if (registers == NULL || device_data == NULL || register_count < ACREL_DTSD1352_ABC_VOLATGE_CURRENT_COUNT)
     {

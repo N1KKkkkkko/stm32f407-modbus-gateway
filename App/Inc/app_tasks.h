@@ -25,13 +25,19 @@ extern osMessageQueueId_t Queue_Modbus_RequestHandle;
 /* Queue_Modbus_Respond: Task_RS485 -> Task_Pollin (one RS485_Response_t) */
 extern osMessageQueueId_t Queue_Modbus_RespondHandle;
 
+// CubeMX generated mutex handle in freertos.c
+extern osMutexId_t Mutex_P_RHandle;
+
 // Task_Edge.c
 extern volatile uint32_t TimeStamp;
-uint32_t Get_Timestamp(void);
+uint32_t Timestamp_Init(void);
 uint8_t Time3_Start(void);
 uint8_t Temp_Start(void);
-uint8_t Get_Temp(DeviceData_Rx_t *temp_data);
+uint8_t Get_Temp(DeviceData_Rx_Data_t *temp_data);
 void Task_Edge_Run(void *argument);
+
+// Task_Net.c
+void Task_Net_Run(void *argument);
 
 // Task_RS485.c
 void Task_RS485_Run(void *argument);

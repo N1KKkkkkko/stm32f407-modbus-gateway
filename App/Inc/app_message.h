@@ -15,7 +15,8 @@
 
 #define MAX_PAYLOAD_LEN 16
 #define POOL_BLOCK_COUNT 30  // 内存池 30 块，能扛短时离线积压
-#define DEVICE_DATA_RX_QUEUE_ITEM_SIZE 48U
+#define ITEM_PER_BLOCK 8U
+#define DEVICE_DATA_RX_QUEUE_ITEM_SIZE 356U
 #define LOG_DATA_QUEUE_ITEM_SIZE 12U
 #define RS485_REQUEST_QUEUE_ITEM_SIZE  16U
 #define RS485_RESPONSE_QUEUE_ITEM_SIZE 76U
@@ -40,9 +41,9 @@ typedef struct
     float temperature_c;       // 芯片温度，单位摄氏度
 } Dev_Gateway_Temp_t;
 
-// Queue_DeviceData_Rx Item
+// 单条设备数据
 // 设备数据 （经过USART,Modbus RTU协议拆解后的设备数据 和 网关温度）
-typedef struct DeviceData_Rx_t {
+typedef struct DeviceData_Rx_Data_t {
     uint32_t timestamp;//时间戳
     DeviceType_t dev_type;// 设备类型
     uint8_t  dev_id; // 设备ID
@@ -51,14 +52,21 @@ typedef struct DeviceData_Rx_t {
         Dev_Acrel_DTSD1352_t Acrel;
         Dev_Gateway_Temp_t GatewaySelf;
     } payload; // 数据载荷(实际数据)，支持多种类型，按设备类型解析
-    uint8_t reserved[4]; // 显式填充到32字节，与静态队列Item大小一致
+} DeviceData_Rx_Data_t;
+
+// Queue_DeviceData_Rx Item
+// 一个队列副本包含最多8条设备数据
+typedef struct DataBlock_t
+{
+    DeviceData_Rx_Data_t data[ITEM_PER_BLOCK];
+    uint8_t data_count;  // 本块实际数据条数
 } DeviceData_Rx_t;
 
 
 // Queue_FlashData Item
 // 只传指针即可，因为长度在结构体里有了，采用解引队列指针，获取内存池数据的方式
 typedef struct {
-     DeviceData_Rx_t *data_ptr;
+     DeviceData_Rx_Data_t *data_ptr;
 } FlashData_t;
 
 
@@ -107,5 +115,14 @@ typedef char RS485RequestQueueItemSizeCheck[
 typedef char RS485ResponseQueueItemSizeCheck[
     (sizeof(RS485_Response_t) == RS485_RESPONSE_QUEUE_ITEM_SIZE) ? 1 : -1
 ];
+
+/* 将单条设备数据加入共享批次，满8条后由静态队列复制整块。 */
+void DeviceData_QueueSample(const DeviceData_Rx_Data_t *sample);
+
+/* 将尚未满8条的共享批次立即入队。 */
+void DeviceData_FlushBatch(void);
+
+/* 从首条零散数据开始计时，超时后尝试非阻塞入队。 */
+uint8_t DeviceData_FlushBatchIfExpired(uint32_t timeout_ms);
 
 #endif // APP_MESSAGE_H

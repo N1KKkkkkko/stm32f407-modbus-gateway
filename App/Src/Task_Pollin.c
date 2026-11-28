@@ -184,7 +184,7 @@ static void RS485_PublishDeviceData(
     const RS485_Response_t *response,
     union RS485_DeviceRuntime_t *device_runtime)
 {
-    DeviceData_Rx_t device_data = {0};
+    DeviceData_Rx_Data_t device_data = {0};
 
     if ((device == NULL) ||
         (function == NULL) ||
@@ -210,12 +210,7 @@ static void RS485_PublishDeviceData(
 
     if (device_data.data_len > 0U)
     {
-        (void)osMessageQueuePut(
-            Queue_DeviceData_RxHandle,
-            &device_data,
-            0U,
-            0U
-        );
+        DeviceData_QueueSample(&device_data);
     }
 }
 

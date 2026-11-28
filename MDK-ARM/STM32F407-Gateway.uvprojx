@@ -6185,6 +6185,11 @@
               <FilePath>..\App\Src\Task_Net.c</FilePath>
             </File>
             <File>
+              <FileName>app_message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\Src\app_message.c</FilePath>
+            </File>
+            <File>
               <FileName>Task_Pollin.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\Src\Task_Pollin.c</FilePath>

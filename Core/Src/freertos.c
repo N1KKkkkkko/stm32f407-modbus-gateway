@@ -60,7 +60,7 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* Definitions for Task_Net */
 osThreadId_t Task_NetHandle;
-uint32_t Task_NetBuffer[ 512 ];
+uint32_t Task_NetBuffer[ 1024 ];
 osStaticThreadDef_t Task_NetControlBlock;
 const osThreadAttr_t Task_Net_attributes = {
   .name = "Task_Net",
@@ -156,7 +156,7 @@ const osThreadAttr_t Task_Pollin_attributes = {
 };
 /* Definitions for Queue_DeviceData_Rx */
 osMessageQueueId_t Queue_DeviceData_RxHandle;
-uint8_t Queue_DeviceData_RxBuffer[ 16 * 48 ];
+uint8_t Queue_DeviceData_RxBuffer[ 8 * 356 ];
 osStaticMessageQDef_t Queue_DeviceData_RxControlBlock;
 const osMessageQueueAttr_t Queue_DeviceData_Rx_attributes = {
   .name = "Queue_DeviceData_Rx",
@@ -244,10 +244,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
-  /* Create the mutex(es) */
   /* creation of Mutex_P_R */
   Mutex_P_RHandle = osMutexNew(&Mutex_P_R_attributes);
 
+  /* Create the mutex(es) */
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -263,7 +263,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of Queue_DeviceData_Rx */
-  Queue_DeviceData_RxHandle = osMessageQueueNew (16, 48, &Queue_DeviceData_Rx_attributes);
+  Queue_DeviceData_RxHandle = osMessageQueueNew (8, 356, &Queue_DeviceData_Rx_attributes);
 
   /* creation of Queue_FlashData */
   Queue_FlashDataHandle = osMessageQueueNew (30, 4, &Queue_FlashData_attributes);
@@ -349,11 +349,7 @@ void StartDefaultTask(void *argument)
 void Task_Net_Entry(void *argument)
 {
   /* USER CODE BEGIN Task_Net_Entry */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+  Task_Net_Run(argument);
   /* USER CODE END Task_Net_Entry */
 }
 

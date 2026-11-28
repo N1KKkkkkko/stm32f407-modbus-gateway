@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct DeviceData_Rx_t;
+struct DeviceData_Rx_Data_t;
 union RS485_DeviceRuntime_t;
 
 /*初始地址映射*/
@@ -43,19 +43,19 @@ typedef struct
 void Acrel_DTSD1352_Pack_PTCT(
     const uint16_t *registers,
     uint16_t register_count,
-    struct DeviceData_Rx_t *device_data,
+    struct DeviceData_Rx_Data_t *device_data,
     union RS485_DeviceRuntime_t *device_runtime);
 
 void Acrel_DTSD1352_Pack_EnergyTotal(
     const uint16_t *registers,
     uint16_t register_count,
-    struct DeviceData_Rx_t *device_data,
+    struct DeviceData_Rx_Data_t *device_data,
     union RS485_DeviceRuntime_t *device_runtime);
 
 void Acrel_DTSD1352_Pack_Current_Voltage_ABC(
     const uint16_t *registers,
     uint16_t register_count,
-    struct DeviceData_Rx_t *device_data,
+    struct DeviceData_Rx_Data_t *device_data,
     union RS485_DeviceRuntime_t *device_runtime);
 
 #endif /* DEV_ACREL_DTSD1352_H */

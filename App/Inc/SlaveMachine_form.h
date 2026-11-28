@@ -30,7 +30,7 @@ union RS485_DeviceRuntime_t
 typedef void (*RS485_Read_SlaveUnpackData_t)(
     const uint16_t *registers,
     uint16_t register_count,
-    DeviceData_Rx_t *device_data,
+    DeviceData_Rx_Data_t *device_data,
     union RS485_DeviceRuntime_t *device_runtime
 );   
 

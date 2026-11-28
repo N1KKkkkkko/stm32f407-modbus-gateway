@@ -6,7 +6,7 @@
 注    意：包含 时间戳获取函数 和 ADC换算函数（时间戳获取函数在多个任务都用到，不是通过一个全局变量引用）
         
         Time3_Start                         启动TIM3
-        Get_Timestamp                       将RTC转换成32位Unix时间戳
+        Timestamp_Init                       将RTC转换成32位Unix时间戳
         HAL_TIM_PeriodElapsedCallback       TIM3 update中断回调函数，时间戳自增
         Temp_Start                          启动ADC-DMA采样，将ADC搬运到s_adc_dma_buffer[2] 2 意味两通道
         HAL_ADC_ConvCpltCallback            ADC 转换完成中断回调函数,adc采样完成后s_adc_sample_ready置1
@@ -58,7 +58,7 @@ static uint8_t IsLeapYear(uint16_t year)
             ((year % 100U != 0U) || (year % 400U == 0U)));
 }
 
-uint32_t Get_Timestamp(void)//返回32位时间戳，单位为秒，UTC（始:1970-01-01 00:00:00）
+uint32_t Timestamp_Init(void)//返回32位时间戳，单位为秒，UTC（始:1970-01-01 00:00:00）
 {
     RTC_TimeTypeDef sTime = {0};
     RTC_DateTypeDef sDate = {0};
@@ -181,7 +181,7 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)  //weak函数可以在这里
     }
 }
 
-uint8_t Get_Temp(DeviceData_Rx_t *temp_data) //传指针可以给实际数据赋值
+uint8_t Get_Temp(DeviceData_Rx_Data_t *temp_data) //传指针可以给实际数据赋值
 {
     uint16_t temp_raw;
     uint16_t vrefint_raw;
@@ -193,7 +193,7 @@ uint8_t Get_Temp(DeviceData_Rx_t *temp_data) //传指针可以给实际数据赋
         return 0U;
     }
 
-    *temp_data = (DeviceData_Rx_t){0};
+    *temp_data = (DeviceData_Rx_Data_t){0};
 
     __DMB();//确保读取s_adc_sample_ready前，DMA传输已完成
     if (s_adc_sample_ready == 0U)
@@ -231,7 +231,8 @@ uint8_t Get_Temp(DeviceData_Rx_t *temp_data) //传指针可以给实际数据赋
 
 void Task_Edge_Run(void *argument)
 {
-  DeviceData_Rx_t temp_data; //用于存储温湿度传感器数据的队列Item结构体
+  // 单条设备数据，由共享批次函数打包后进入静态队列。
+  DeviceData_Rx_Data_t temp_data; //用于存储温湿度传感器数据的队列Item结构体
 
   while (Temp_Start() == 0U)//等待温湿度传感器初始化完
   {
@@ -245,12 +246,7 @@ void Task_Edge_Run(void *argument)
 
     if (Get_Temp(&temp_data) != 0U)
     {
-      (void)osMessageQueuePut(              //入队列
-        Queue_DeviceData_RxHandle,
-        &temp_data,
-        0U,//消息优先????
-        0U //等待时间
-      );
+      DeviceData_QueueSample(&temp_data);
     }
   }
 }

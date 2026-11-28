@@ -108,7 +108,7 @@ int main(void)
   MX_RTC_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  TimeStamp = Get_Timestamp(); //初始化当前时间戳，单位为秒，UTC
+  TimeStamp = Timestamp_Init(); //初始化当前时间戳，单位为秒，UTC
 
   if (Time3_Start() == 0U) //启动TIM3，独立维护TimeStamp
   {
